@@ -1,0 +1,60 @@
+cmake_minimum_required(VERSION 3.27.0 FATAL_ERROR)
+
+project(SigmaDrift VERSION 0.1.0
+    LANGUAGES C CXX)
+
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_C_EXTENSIONS ON)
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS ON)
+
+set(BUILD_SHARED_LIBS OFF)
+set(CMAKE_COMPILE_WARNING_AS_ERROR ON)
+
+include(FetchContent)
+set(FETCHCONTENT_QUIET FALSE)
+
+set(SDL_SHARED OFF CACHE INTERNAL "")
+set(SDL_STATIC ON CACHE INTERNAL "")
+set(SDL_TEST_LIBRARY OFF CACHE INTERNAL "")
+set(SDL_RENDER ON CACHE INTERNAL "")
+set(SDL_GPU OFF CACHE INTERNAL "")
+set(SDL_AUDIO ON CACHE INTERNAL "")
+set(SDL_CAMERA OFF CACHE INTERNAL "")
+set(SDL_JOYSTICK OFF CACHE INTERNAL "")
+set(SDL_HAPTIC OFF CACHE INTERNAL "")
+
+FetchContent_Declare(SDL3
+    GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
+    GIT_TAG release-3.4.8
+    EXCLUDE_FROM_ALL)
+FetchContent_MakeAvailable(SDL3)
+
+set(S_FIXED_BUILD_TEST OFF CACHE INTERNAL "")
+
+FetchContent_Declare(S_fixed
+    GIT_REPOSITORY https://github.com/Schwungus/S_fixed.git
+    GIT_TAG 86607c5d2d55a662470a061b337e4f8922c6598d
+    EXCLUDE_FROM_ALL)
+FetchContent_MakeAvailable(S_fixed)
+
+if(EMSCRIPTEN)
+    set(CMAKE_EXECUTABLE_SUFFIX ".html")
+endif()
+
+file(GLOB_RECURSE SOURCES ${CMAKE_SOURCE_DIR}/src/*.c)
+file(GLOB_RECURSE HEADERS ${CMAKE_SOURCE_DIR}/src/*.h)
+
+set(CONFIGURE_FILE ${CMAKE_BINARY_DIR}/generated/cmake.h)
+configure_file(${CMAKE_SOURCE_DIR}/src/cmake.h.in ${CONFIGURE_FILE} @ONLY)
+list(APPEND HEADERS ${CONFIGURE_FILE})
+
+add_executable(${PROJECT_NAME} WIN32 ${SOURCES} ${HEADERS})
+
+target_include_directories(${PROJECT_NAME}
+    PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_BINARY_DIR}/generated)
+target_link_libraries(${PROJECT_NAME} PRIVATE
+    SDL3::SDL3-static S_fixed)
