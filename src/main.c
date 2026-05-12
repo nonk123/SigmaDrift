@@ -5,30 +5,38 @@
 #include <SDL3/SDL_init.h>
 #include <SDL3/SDL_log.h>
 #include <SDL3/SDL_main.h>
-#include <SDL3/SDL_opengl.h>
 #include <SDL3/SDL_render.h>
 #include <SDL3/SDL_stdinc.h>
 #include <SDL3/SDL_video.h>
 
+#define S_TRUCTURES_IMPLEMENTATION
+#include <S_tructures.h>
+
 #include "cmake.h"
+#include "coob.h"
+#include "object.h"
+#include "video.h"
 
 static SDL_Window* window = NULL;
 static SDL_GLContext gpu = NULL;
 
-SDL_AppResult SDL_Fail() {
-    SDL_LogError(SDL_LOG_CATEGORY_CUSTOM, "Error %s", SDL_GetError());
+static Object* objects = NULL;
+
+static SDL_AppResult SDL_Fail() {
+    SDL_LogError(SDL_LOG_CATEGORY_CUSTOM, "%s", SDL_GetError());
     return SDL_APP_FAILURE;
 }
 
 SDL_AppResult SDL_AppInit(void** ctx, int argc, char* argv[]) {
     (void)ctx, (void)argc, (void)argv;
 
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 1);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO))
         return SDL_Fail();
-
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
 
     window = SDL_CreateWindow(GAME_NAME, 800, 600, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
 
@@ -40,11 +48,20 @@ SDL_AppResult SDL_AppInit(void** ctx, int argc, char* argv[]) {
     if (!gpu || !SDL_GL_MakeCurrent(window, gpu))
         return SDL_Fail();
 
-    SDL_ShowWindow(window);
     SDL_GL_SetSwapInterval(-1);
 
     if (!gladLoadGL((GLADloadfunc)SDL_GL_GetProcAddress))
         return SDL_Fail();
+
+    SDL_LogInfo(SDL_LOG_CATEGORY_CUSTOM, "%s\n", glGetString(GL_RENDERER));
+
+    objects = MakeTinyD(Object);
+
+    Object coob = {.init = init_coob, .draw = draw_coob};
+    coob.pos = XYZ(0.f, 0.f, 0.f);
+    objects = TinyDAppendPro(objects, &coob);
+
+    SDL_ShowWindow(window);
 
     return SDL_APP_CONTINUE;
 }
@@ -68,6 +85,17 @@ SDL_AppResult SDL_AppEvent(void* ctx, SDL_Event* event) {
 SDL_AppResult SDL_AppIterate(void* ctx) {
     (void)ctx;
 
+    for (size_t i = 0; i < TinyDLength(objects); i++) {
+        Object* obj = objects + i;
+
+        if (!obj->uhh) {
+            obj->init(obj);
+            obj->uhh = true;
+        }
+
+        obj->update(obj);
+    }
+
     glClearColor(0.5f, 0.2f, 0.5f, 1.f);
     glClear(GL_COLOR_BUFFER_BIT);
 
@@ -76,11 +104,22 @@ SDL_AppResult SDL_AppIterate(void* ctx) {
     glClear(GL_DEPTH_BUFFER_BIT);
 #endif
 
+    begin_drawing();
+
+    for (size_t i = 0; i < TinyDLength(objects); i++) {
+        Object* obj = objects + i;
+        obj->draw(obj);
+    }
+
+    end_drawing();
+
     return SDL_APP_CONTINUE;
 }
 
 void SDL_AppQuit(void* ctx, SDL_AppResult result) {
     (void)ctx, (void)result;
+
+    FreeTinyD(objects); // TODO: individual cleanup?
 
     if (gpu)
         SDL_GL_DestroyContext(gpu);

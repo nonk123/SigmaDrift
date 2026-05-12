@@ -46,14 +46,14 @@ FetchContent_Declare(cglm
     GIT_TAG v0.9.6
     EXCLUDE_FROM_ALL)
 
-FetchContent_Declare(S_fixed
-    GIT_REPOSITORY https://github.com/Schwungus/S_fixed.git
-    GIT_TAG 86607c5d2d55a662470a061b337e4f8922c6598d
+FetchContent_Declare(S_tructures
+    GIT_REPOSITORY https://github.com/Schwungus/S_tructures
+    GIT_TAG 184f9a611fa2e04770a84c45121c775169e69fc6
     EXCLUDE_FROM_ALL)
 
-FetchContent_MakeAvailable(SDL3 glad cglm S_fixed)
+FetchContent_MakeAvailable(SDL3 glad cglm S_tructures)
 
-glad_add_library(gladstuff REPRODUCIBLE STATIC API gl:compatibility=3.1)
+glad_add_library(gladstuff REPRODUCIBLE STATIC API gl:core=1.1)
 
 if(EMSCRIPTEN)
     set(CMAKE_EXECUTABLE_SUFFIX ".html")
@@ -67,8 +67,7 @@ configure_file(${CMAKE_SOURCE_DIR}/src/cmake.h.in ${CONFIGURE_FILE} @ONLY)
 list(APPEND HEADERS ${CONFIGURE_FILE})
 
 add_executable(${PROJECT_NAME} WIN32 ${SOURCES} ${HEADERS})
-
 target_include_directories(${PROJECT_NAME}
     PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_BINARY_DIR}/generated)
 target_link_libraries(${PROJECT_NAME} PRIVATE
-    SDL3::SDL3-static gladstuff cglm S_fixed)
+    SDL3::SDL3-static gladstuff cglm S_tructures)
