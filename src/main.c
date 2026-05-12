@@ -1,13 +1,16 @@
 #define SDL_MAIN_USE_CALLBACKS
 
-#include <glad/gl.h>
-
 #include <SDL3/SDL_init.h>
 #include <SDL3/SDL_log.h>
 #include <SDL3/SDL_main.h>
+#include <SDL3/SDL_opengl.h>
 #include <SDL3/SDL_render.h>
 #include <SDL3/SDL_stdinc.h>
 #include <SDL3/SDL_video.h>
+
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
 
 #include <cglm/cglm.h>
 
@@ -44,17 +47,13 @@ SDL_AppResult SDL_AppInit(void** ctx, int argc, char* argv[]) {
     if (!window)
         return SDL_Fail();
 
-    gpu = SDL_GL_CreateContext(window);
-
-    if (!gpu || !SDL_GL_MakeCurrent(window, gpu))
+    if (!SDL_GL_CreateContext(window))
         return SDL_Fail();
 
     SDL_GL_SetSwapInterval(-1);
-
-    if (!gladLoadGL((GLADloadfunc)SDL_GL_GetProcAddress))
-        return SDL_Fail();
-
     SDL_LogInfo(SDL_LOG_CATEGORY_CUSTOM, "%s\n", glGetString(GL_RENDERER));
+
+    glEnable(GL_TEXTURE_2D);
 
     objects = MakeTinyD(Object);
 

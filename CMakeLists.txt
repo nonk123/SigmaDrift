@@ -21,22 +21,22 @@ set(SDL_SHARED OFF CACHE INTERNAL "")
 set(SDL_STATIC ON CACHE INTERNAL "")
 set(SDL_TEST_LIBRARY OFF CACHE INTERNAL "")
 set(SDL_RENDER ON CACHE INTERNAL "")
+set(SDL_OPENGL ON CACHE INTERNAL "")
 set(SDL_GPU OFF CACHE INTERNAL "")
 set(SDL_AUDIO ON CACHE INTERNAL "")
 set(SDL_CAMERA OFF CACHE INTERNAL "")
 set(SDL_JOYSTICK OFF CACHE INTERNAL "")
 set(SDL_HAPTIC OFF CACHE INTERNAL "")
 
-FetchContent_Declare(SDL3
-    GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
-    GIT_TAG release-3.4.8
-    EXCLUDE_FROM_ALL)
+if(NOT EMSCRIPTEN) # emscripten ships its own SDL3 apparently???
+    FetchContent_Declare(SDL3
+        GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
+        GIT_TAG release-3.4.8
+        EXCLUDE_FROM_ALL)
 
-FetchContent_Declare(glad
-    GIT_REPOSITORY https://github.com/Dav1dde/glad.git
-    GIT_TAG v2.0.8
-    SOURCE_SUBDIR cmake
-    EXCLUDE_FROM_ALL)
+    FetchContent_MakeAvailable(SDL3)
+    list(APPEND LIBS SDL3::SDL3-static)
+endif()
 
 set(CGLM_SHARED OFF CACHE INTERNAL "")
 set(CGLM_STATIC ON CACHE INTERNAL "")
@@ -46,14 +46,18 @@ FetchContent_Declare(cglm
     GIT_TAG v0.9.6
     EXCLUDE_FROM_ALL)
 
+FetchContent_MakeAvailable(cglm)
+list(APPEND LIBS cglm)
+
 FetchContent_Declare(S_tructures
     GIT_REPOSITORY https://github.com/Schwungus/S_tructures
     GIT_TAG 184f9a611fa2e04770a84c45121c775169e69fc6
     EXCLUDE_FROM_ALL)
 
-FetchContent_MakeAvailable(SDL3 glad cglm S_tructures)
+FetchContent_MakeAvailable(S_tructures)
+list(APPEND LIBS S_tructures)
 
-glad_add_library(gladstuff REPRODUCIBLE STATIC API gl:core=1.1)
+find_package(OpenGL REQUIRED)
 
 if(EMSCRIPTEN)
     set(CMAKE_EXECUTABLE_SUFFIX ".html")
@@ -69,5 +73,9 @@ list(APPEND HEADERS ${CONFIGURE_FILE})
 add_executable(${PROJECT_NAME} WIN32 ${SOURCES} ${HEADERS})
 target_include_directories(${PROJECT_NAME}
     PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_BINARY_DIR}/generated)
-target_link_libraries(${PROJECT_NAME} PRIVATE
-    SDL3::SDL3-static gladstuff cglm S_tructures)
+target_link_libraries(${PROJECT_NAME} PRIVATE ${LIBS} OpenGL::GL)
+
+if(EMSCRIPTEN)
+    target_link_options(${PROJECT_NAME} PRIVATE
+        -sLEGACY_GL_EMULATION=1 -sGL_UNSAFE_OPTS=0 -sGL_FFP_ONLY=1 -sUSE_SDL=3)
+endif()
