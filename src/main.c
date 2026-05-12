@@ -1,6 +1,7 @@
 #define SDL_MAIN_USE_CALLBACKS
 
 #include <glad/gl.h>
+
 #include <SDL3/SDL_init.h>
 #include <SDL3/SDL_log.h>
 #include <SDL3/SDL_main.h>
