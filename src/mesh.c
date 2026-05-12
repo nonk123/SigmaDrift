@@ -1,3 +1,5 @@
+#include <SDL3/SDL_stdinc.h>
+
 #include <S_tructures.h>
 
 #include "mesh.h"
@@ -11,8 +13,6 @@ void gen_box(Mesh* out, Vec3 size) {
     FreeTinyD(out->da_vertices);
     FreeTinyD(out->da_nachos);
 
-    MakeTinyD(Vec3);
-
     Vec3 verts[8] = {
         XYZ(-ext.x, -ext.y, -ext.z),
         XYZ(-ext.x, -ext.y, +ext.z),
@@ -23,6 +23,13 @@ void gen_box(Mesh* out, Vec3 size) {
         XYZ(+ext.x, +ext.y, -ext.z),
         XYZ(+ext.x, +ext.y, +ext.z),
     };
+
+    out->da_vertices = MakeTinyD(Vec3);
+
+    for (size_t i = 0; i < SDL_arraysize(verts); i++)
+        out->da_vertices = TinyDAppend(out->da_vertices, verts[i]);
+
+    out->da_nachos = MakeTinyD(Nacho);
 
     Nacho nachos[12] = {
         {0, 1, 3},
@@ -39,11 +46,6 @@ void gen_box(Mesh* out, Vec3 size) {
         {1, 7, 3}
     };
 
-    glGenBuffers(1, &out->vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, out->vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_STATIC_DRAW);
-
-    glGenBuffers(1, &out->ibo);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, out->ibo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(nachos), nachos, GL_STATIC_DRAW);
+    for (size_t i = 0; i < SDL_arraysize(nachos); i++)
+        out->da_nachos = TinyDAppend(out->da_nachos, nachos[i]);
 }

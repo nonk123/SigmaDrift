@@ -4,7 +4,4 @@
 
 #include "mesh.h"
 
-bool init_video();
-void begin_drawing(), end_drawing();
-
 void draw_mesh(Mesh, Vec3);

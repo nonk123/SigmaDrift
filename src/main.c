@@ -9,13 +9,14 @@
 #include <SDL3/SDL_stdinc.h>
 #include <SDL3/SDL_video.h>
 
+#include <cglm/cglm.h>
+
 #define S_TRUCTURES_IMPLEMENTATION
 #include <S_tructures.h>
 
 #include "cmake.h"
 #include "coob.h"
 #include "object.h"
-#include "video.h"
 
 static SDL_Window* window = NULL;
 static SDL_GLContext gpu = NULL;
@@ -33,7 +34,7 @@ SDL_AppResult SDL_AppInit(void** ctx, int argc, char* argv[]) {
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 1);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
-    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+    // SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO))
         return SDL_Fail();
@@ -70,6 +71,9 @@ SDL_AppResult SDL_AppEvent(void* ctx, SDL_Event* event) {
     (void)ctx;
 
     switch (event->type) {
+    case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
+        return SDL_APP_SUCCESS;
+
     case SDL_EVENT_KEY_DOWN:
         if (event->key.key == SDLK_ESCAPE)
             return SDL_APP_SUCCESS;
@@ -89,29 +93,40 @@ SDL_AppResult SDL_AppIterate(void* ctx) {
         Object* obj = objects + i;
 
         if (!obj->uhh) {
-            obj->init(obj);
+            if (obj->init)
+                obj->init(obj);
             obj->uhh = true;
         }
 
-        obj->update(obj);
+        if (obj->update)
+            obj->update(obj);
     }
 
+    int width = 0, height = 0;
+    SDL_GetWindowSizeInPixels(window, &width, &height);
+    glViewport(0, 0, width, height);
+
     glClearColor(0.5f, 0.2f, 0.5f, 1.f);
-    glClear(GL_COLOR_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-#if 0
-    glClearDepthf(1.f);
-    glClear(GL_DEPTH_BUFFER_BIT);
-#endif
+    mat4 proj = {0};
+    glm_perspective(glm_rad(45.0f), (float)width / (float)height, 0.01f, 1024.f, proj);
 
-    begin_drawing();
+    glMatrixMode(GL_PROJECTION);
+    glLoadMatrixf(proj[0]);
+
+    mat4 view = {0};
+    glm_lookat(XYZf(3.f, 3.f, 3.f), XYZf(0.f, 0.f, 0.f), XYZf(0.f, 1.f, 0.f), view);
+
+    glMatrixMode(GL_MODELVIEW);
+    glLoadMatrixf(view[0]);
 
     for (size_t i = 0; i < TinyDLength(objects); i++) {
         Object* obj = objects + i;
-        obj->draw(obj);
-    }
 
-    end_drawing();
+        if (obj->draw)
+            obj->draw(obj);
+    }
 
     return SDL_APP_CONTINUE;
 }

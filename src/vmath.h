@@ -7,3 +7,4 @@ typedef struct {
 } Vec3;
 
 #define XYZ(_x, _y, _z) ((Vec3){.x = (_x), .y = (_y), .z = (_z)})
+#define XYZf(_x, _y, _z) ((float*)&XYZ(_x, _y, _z))
