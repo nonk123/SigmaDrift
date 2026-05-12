@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.27.0 FATAL_ERROR)
 
 project(SigmaDrift VERSION 0.1.0
-    LANGUAGES C CXX)
+    LANGUAGES C)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -31,15 +31,29 @@ FetchContent_Declare(SDL3
     GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
     GIT_TAG release-3.4.8
     EXCLUDE_FROM_ALL)
-FetchContent_MakeAvailable(SDL3)
 
-set(S_FIXED_BUILD_TEST OFF CACHE INTERNAL "")
+FetchContent_Declare(glad
+    GIT_REPOSITORY https://github.com/Dav1dde/glad.git
+    GIT_TAG v2.0.8
+    SOURCE_SUBDIR cmake
+    EXCLUDE_FROM_ALL)
+
+set(CGLM_SHARED OFF CACHE INTERNAL "")
+set(CGLM_STATIC ON CACHE INTERNAL "")
+
+FetchContent_Declare(cglm
+    GIT_REPOSITORY https://github.com/recp/cglm.git
+    GIT_TAG v0.9.6
+    EXCLUDE_FROM_ALL)
 
 FetchContent_Declare(S_fixed
     GIT_REPOSITORY https://github.com/Schwungus/S_fixed.git
     GIT_TAG 86607c5d2d55a662470a061b337e4f8922c6598d
     EXCLUDE_FROM_ALL)
-FetchContent_MakeAvailable(S_fixed)
+
+FetchContent_MakeAvailable(SDL3 glad cglm S_fixed)
+
+glad_add_library(gladstuff REPRODUCIBLE STATIC API gl:compatibility=3.1)
 
 if(EMSCRIPTEN)
     set(CMAKE_EXECUTABLE_SUFFIX ".html")
@@ -57,4 +71,4 @@ add_executable(${PROJECT_NAME} WIN32 ${SOURCES} ${HEADERS})
 target_include_directories(${PROJECT_NAME}
     PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_BINARY_DIR}/generated)
 target_link_libraries(${PROJECT_NAME} PRIVATE
-    SDL3::SDL3-static S_fixed)
+    SDL3::SDL3-static gladstuff cglm S_fixed)
